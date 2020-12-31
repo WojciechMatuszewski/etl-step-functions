@@ -1,0 +1,15 @@
+!jest.config.js
+!global.d.ts
+*.d.ts
+node_modules
+
+# CDK asset staging directory
+.cdk.staging
+cdk.out
+cdk-build
+functions-build
+dist
+
+# Parcel default cache directory
+.parcel-cache
+output.json
