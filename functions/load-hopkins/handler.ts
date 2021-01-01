@@ -5,20 +5,16 @@ import cv from "csvtojson";
 import { Transform } from "stream";
 import { asyncResult } from "@expo/results";
 
-const { DATA_BUCKET_NAME } = process.env;
-
 export const handler = async () => {
   const uploadResult = await asyncResult(uploadData());
 
   if (!uploadResult.ok) {
+    console.log(uploadResult.reason);
     throw new Error("upload failed");
   }
 
   return uploadResult.value;
 };
-
-const url =
-  "https://raw.githubusercontent.com/datasets/covid-19/master/data/time-series-19-covid-combined.csv";
 
 function createFilter() {
   const filterTransformer = new Transform({
@@ -37,25 +33,29 @@ function createCSVParser() {
 }
 
 function createJSONTransformer() {
-  let isFirst = true;
+  let isFirstTransformation = true;
 
   return new Transform({
     transform(chunk, encoding, next) {
-      if (isFirst) {
-        isFirst = false;
+      if (isFirstTransformation) {
+        isFirstTransformation = false;
+
         const newChunk = Buffer.from(`[${chunk.toString()}`, "utf-8");
         return next(null, newChunk);
       }
+
       const newChunk = Buffer.from(`,${chunk.toString()}`, "utf-8");
       return next(null, newChunk);
     },
     flush(callback) {
-      console.log("last flushing");
       const lastChunk = Buffer.from(`]`);
       callback(null, lastChunk);
     }
   });
 }
+
+const url =
+  "https://raw.githubusercontent.com/datasets/covid-19/master/data/time-series-19-covid-combined.csv";
 
 async function uploadData() {
   const key = `hopkins-${new Date().toISOString()}.json`;
@@ -70,6 +70,8 @@ async function uploadData() {
   const s3Client = new S3({
     maxAttempts: 0
   });
+
+  const { DATA_BUCKET_NAME } = process.env;
   const uploader = new Upload({
     client: s3Client,
     params: { Bucket: DATA_BUCKET_NAME, Key: key, Body: stream },

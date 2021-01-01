@@ -22,15 +22,17 @@ function createCSVParser() {
 }
 
 function createJSONTransformer() {
-  let isFirst = true;
+  let isFirstTransformation = true;
 
   return new Transform({
     transform(chunk, encoding, next) {
-      if (isFirst) {
-        isFirst = false;
+      if (isFirstTransformation) {
+        isFirstTransformation = false;
+
         const newChunk = Buffer.from(`[${chunk.toString()}`, "utf-8");
         return next(null, newChunk);
       }
+
       const newChunk = Buffer.from(`,${chunk.toString()}`, "utf-8");
       return next(null, newChunk);
     },

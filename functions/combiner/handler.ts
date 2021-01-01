@@ -1,6 +1,6 @@
 import { S3 } from "@aws-sdk/client-s3";
 import { Readable } from "stream";
-
+import streamToPromise from "stream-to-promise";
 import chunk from "lodash/chunk";
 
 const s3Client = new S3({});
@@ -16,14 +16,8 @@ function getSortedKeys(keys: string[]) {
 async function streamToJSON(
   stream: Readable
 ): Promise<Record<string, string>[]> {
-  let data = "";
-  return new Promise((resolve, reject) => {
-    stream.on("data", chunk => {
-      data += chunk.toString();
-    });
-    stream.on("error", reject);
-    stream.on("end", () => resolve(JSON.parse(data)));
-  });
+  const buffer = await streamToPromise(stream);
+  return JSON.parse(buffer.toString());
 }
 
 function nyDataToLookupTable(nyData: Record<string, string>[]) {
